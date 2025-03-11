@@ -28,13 +28,13 @@ class LogicGateGUI:
 
         # Load images for logic gates
         gate_filenames = {
-            "AND": "AND TT.jpg",
-            "OR": "OR TT.jpg",
-            "NOT": "NOT TT.png",
-            "NAND": "NAND TT.jpg",
-            "NOR": "NOR TT.png",
-            "XOR": "XOR TT.jpg",
-            "XNOR": "XNOR TT.jpg",
+            "AND": "AND.jpg",
+            "OR": "OR.jpg",
+            "NOT": "NOT.png",
+            "NAND": "NAND.jpg",
+            "NOR": "NOR.png",
+            "XOR": "XOR.jpg",
+            "XNOR": "XNOR.jpg",
         }
         self.gate_images = {}
         for gate, filename in gate_filenames.items():
