@@ -257,13 +257,23 @@ if selected_experiment in all_experiments["Basic Logic Gates"]:
     basic_logic_gate_simulator(selected_experiment)
 
 # Combinational Circuit Functions
+import streamlit as st
+import pandas as pd
+
+# Assuming XOR_gate and AND_gate are defined elsewhere
+def XOR_gate(a, b):
+    return a ^ b
+
+def AND_gate(a, b):
+    return a & b
+
 def half_adder_simulator():
     st.write("### Half Adder Circuit")
     st.info("A half adder adds two binary digits and produces a sum and carry output.")
     
-    # Circuit diagram placeholder
+    # Display the circuit diagram image
     st.write("#### Circuit Diagram")
-    st.write("A half adder consists of an XOR gate (for sum) and an AND gate (for carry)")
+    st.image("half_adder_diagram.png", caption="Half Adder Circuit Diagram", use_column_width=True)
     
     # Truth Table
     st.write("### Truth Table")
@@ -297,23 +307,31 @@ def half_adder_simulator():
             log_data(inputs, outputs, "Half Adder")
             
         with sim_col2:
-            # Create a simple diagram
+            # Display the implementation diagram image
             st.write("#### Half Adder Implementation")
-            st.markdown("""
-            ```
-            A --+---> XOR ---> Sum
-               |
-            B --+---> AND ---> Carry
-            ```
-            """)
+            st.image("half_adder_diagram.png", caption="Half Adder Implementation", use_column_width=True)
+
+
+import streamlit as st
+import pandas as pd
+
+# Assuming XOR_gate, AND_gate, and OR_gate are defined elsewhere
+def XOR_gate(a, b):
+    return a ^ b
+
+def AND_gate(a, b):
+    return a & b
+
+def OR_gate(a, b):
+    return a | b
 
 def full_adder_simulator():
     st.write("### Full Adder Circuit")
     st.info("A full adder adds three binary digits (including a carry-in) and produces a sum and carry output.")
     
-    # Circuit diagram placeholder
+    # Display the circuit diagram image
     st.write("#### Circuit Diagram")
-    st.write("A full adder can be built using two half adders and an OR gate")
+    st.image("full_adder_circuit.jpg", caption="Full Adder Circuit Diagram",use_column_width=True)  # Adjust width as needed
     
     # Truth Table
     st.write("### Truth Table")
@@ -364,31 +382,30 @@ def full_adder_simulator():
             log_data(inputs, outputs, "Full Adder")
             
         with sim_col2:
-            # Create a simple diagram
+            # Display the implementation diagram image
             st.write("#### Full Adder Implementation")
-            st.markdown("""
-            ```
-                        +-----Half Adder-----+
-            A --------->|A                   |
-                        |                 Sum|----+----> XOR -----> Sum
-            B --------->|B                   |    |
-                        |                Carry|--+ |
-                        +-------------------+  | |
-                                               | |
-                                               | |
-                        +-----Half Adder-----+ | |
-                        |A                   | | |
-            Cin ------->|B                   | | |
-                        |                 Sum|<+ |
-                        |                    |   |
-                        |                Carry|--+---> OR ------> Carry Out
-                        +-------------------+
-            ```
-            """)
+            st.image("full_adder_circuit.jpg", caption="Full Adder Implementation", use_column_width=True)  # Adjust width as needed
+
+import streamlit as st
+import pandas as pd
+
+# Assuming XOR_gate, AND_gate, and NOT_gate are defined elsewhere
+def XOR_gate(a, b):
+    return a ^ b
+
+def AND_gate(a, b):
+    return a & b
+
+def NOT_gate(a):
+    return 1 - a
 
 def half_subtractor_simulator():
     st.write("### Half Subtractor Circuit")
     st.info("A half subtractor subtracts two binary digits and produces a difference and borrow output.")
+    
+    # Display the circuit diagram image
+    st.write("#### Circuit Diagram")
+    st.image("half_subtractor_diagram.png", caption="Half Subtractor Circuit Diagram", use_column_width=True)
     
     # Truth Table
     st.write("### Truth Table")
@@ -422,19 +439,35 @@ def half_subtractor_simulator():
             log_data(inputs, outputs, "Half Subtractor")
             
         with sim_col2:
-            # Create a simple diagram
+            # Display the implementation diagram image
             st.write("#### Half Subtractor Implementation")
-            st.markdown("""
-            ```
-            A --+---> XOR ---> Difference
-               |
-            B --+---> AND ---> Borrow
-            ```
-            """)
+            st.image("half_subtractor_diagram.png", caption="Half Subtractor Implementation", use_column_width=True)
+
+
+
+import streamlit as st
+import pandas as pd
+
+# Assuming XOR_gate, AND_gate, OR_gate, and NOT_gate are defined elsewhere
+def XOR_gate(a, b):
+    return a ^ b
+
+def AND_gate(a, b):
+    return a & b
+
+def OR_gate(a, b):
+    return a | b
+
+def NOT_gate(a):
+    return 1 - a
 
 def full_subtractor_simulator():
     st.write("### Full Subtractor Circuit")
     st.info("A full subtractor subtracts three binary digits (including a borrow-in) and produces a difference and borrow output.")
+    
+    # Display the circuit diagram image
+    st.write("#### Circuit Diagram")
+    st.image("full_subtractor_diagram.png", caption="Full Subtractor Circuit Diagram", use_column_width=True)
     
     # Truth Table
     st.write("### Truth Table")
@@ -470,18 +503,238 @@ def full_subtractor_simulator():
             log_data(inputs, outputs, "Full Subtractor")
             
         with sim_col2:
-            # Create a simple diagram
+            # Display the implementation diagram image
             st.write("#### Full Subtractor Implementation")
-            st.markdown("""
-            ```
-            A --+---> XOR ---+---> XOR ---> Difference
-               |            |
-            B --+---> XOR ---+---> AND ---> Borrow Out
-               |            |
-            Borrow In ----->+
-            ```
-            """)
+            st.image("full_subtractor_diagram.png", caption="Full Subtractor Implementation", use_column_width=True)
 
+def multiplexer_simulator():
+    st.write("### Multiplexer (MUX) Circuit")
+    st.info("A multiplexer selects one of many input signals and forwards it to a single output line based on a select signal.")
+    
+    # Display the circuit diagram image
+    st.write("#### Circuit Diagram")
+    st.image("multiplexer_curcuit.jpg", caption="Multiplexer Circuit Diagram", use_column_width=True)
+    
+    # Truth Table for a 2:1 MUX
+    st.write("### Truth Table (2:1 MUX)")
+    truth_table_data = []
+    for s in [0, 1]:
+        for i0 in [0, 1]:
+            for i1 in [0, 1]:
+                output = i0 if s == 0 else i1
+                truth_table_data.append([s, i0, i1, output])
+    
+    truth_df = pd.DataFrame(truth_table_data, columns=["Select (S)", "Input 0 (I0)", "Input 1 (I1)", "Output"])
+    st.table(truth_df)
+    
+    # Interactive Simulation
+    if mode == "🟢 Simulation Mode":
+        st.write("### Interactive Simulation")
+        sim_col1, sim_col2 = st.columns([1, 2])
+        
+        with sim_col1:
+            s = st.toggle("Select (S)", value=False)
+            i0 = st.toggle("Input 0 (I0)", value=False)
+            i1 = st.toggle("Input 1 (I1)", value=False)
+            
+            output = i0 if not s else i1
+            
+            st.metric("Output", output)
+            
+            inputs = {"Select (S)": int(s), "Input 0 (I0)": int(i0), "Input 1 (I1)": int(i1)}
+            outputs = {"Output": output}
+            log_data(inputs, outputs, "Multiplexer")
+            
+        with sim_col2:
+            # Display the implementation diagram image
+            st.write("#### Multiplexer Implementation")
+            st.image("multiplexer_curcuit.jpg", caption="Multiplexer Implementation", use_column_width=True)
+
+def demultiplexer_simulator():
+    st.write("### Demultiplexer (DEMUX) Circuit")
+    st.info("A demultiplexer takes a single input and routes it to one of many outputs based on a select signal.")
+    
+    # Display the circuit diagram image
+    st.write("#### Circuit Diagram")
+    st.image("demultiplexer_curcuit.jpg", caption="Demultiplexer Circuit Diagram", use_column_width=True)
+    
+    # Truth Table for a 1:2 DEMUX
+    st.write("### Truth Table (1:2 DEMUX)")
+    truth_table_data = []
+    for s in [0, 1]:
+        for i in [0, 1]:
+            output0 = i if s == 0 else 0
+            output1 = i if s == 1 else 0
+            truth_table_data.append([s, i, output0, output1])
+    
+    truth_df = pd.DataFrame(truth_table_data, columns=["Select (S)", "Input (I)", "Output 0 (O0)", "Output 1 (O1)"])
+    st.table(truth_df)
+    
+    # Interactive Simulation
+    if mode == "🟢 Simulation Mode":
+        st.write("### Interactive Simulation")
+        sim_col1, sim_col2 = st.columns([1, 2])
+        
+        with sim_col1:
+            s = st.toggle("Select (S)", value=False)
+            i = st.toggle("Input (I)", value=False)
+            
+            output0 = i if not s else 0
+            output1 = i if s else 0
+            
+            st.metric("Output 0 (O0)", output0)
+            st.metric("Output 1 (O1)", output1)
+            
+            inputs = {"Select (S)": int(s), "Input (I)": int(i)}
+            outputs = {"Output 0 (O0)": output0, "Output 1 (O1)": output1}
+            log_data(inputs, outputs, "Demultiplexer")
+            
+        with sim_col2:
+            # Display the implementation diagram image
+            st.write("#### Demultiplexer Implementation")
+            st.image("demultiplexer_curcuit.jpg", caption="Demultiplexer Implementation", use_column_width=True)
+            
+def magnitude_comparator_simulator():
+    st.write("### Magnitude Comparator Circuit")
+    st.info("A magnitude comparator compares two binary numbers and determines if one is greater than, equal to, or less than the other.")
+    
+    # Display the circuit diagram image
+    st.write("#### Circuit Diagram")
+    st.image("magnitude_comparator.gif", caption="Magnitude Comparator Circuit Diagram", use_column_width=True)
+    
+    # Truth Table for a 2-bit comparator
+    st.write("### Truth Table (2-bit Comparator)")
+    truth_table_data = []
+    for a in [0, 1]:
+        for b in [0, 1]:
+            greater = 1 if a > b else 0
+            equal = 1 if a == b else 0
+            less = 1 if a < b else 0
+            truth_table_data.append([a, b, greater, equal, less])
+    
+    truth_df = pd.DataFrame(truth_table_data, columns=["A", "B", "A > B", "A == B", "A < B"])
+    st.table(truth_df)
+    
+    # Interactive Simulation
+    if mode == "🟢 Simulation Mode":
+        st.write("### Interactive Simulation")
+        sim_col1, sim_col2 = st.columns([1, 2])
+        
+        with sim_col1:
+            a = st.toggle("Input A", value=False)
+            b = st.toggle("Input B", value=False)
+            
+            greater = 1 if a > b else 0
+            equal = 1 if a == b else 0
+            less = 1 if a < b else 0
+            
+            st.metric("A > B", greater)
+            st.metric("A == B", equal)
+            st.metric("A < B", less)
+            
+            inputs = {"Input A": int(a), "Input B": int(b)}
+            outputs = {"A > B": greater, "A == B": equal, "A < B": less}
+            log_data(inputs, outputs, "Magnitude Comparator")
+            
+        with sim_col2:
+            # Display the implementation diagram image
+            st.write("#### Magnitude Comparator Implementation")
+            st.image("magnitude_comparator.gif", caption="Magnitude Comparator Implementation", use_column_width=True)
+            
+def binary_addition_simulator():
+    st.write("### Binary Addition Circuit")
+    st.info("A binary addition circuit adds two binary numbers and produces a sum and carry output.")
+    
+    # Display the circuit diagram image
+    st.write("#### Circuit Diagram")
+    st.image("binary_adder.jpg", caption="Binary Addition Circuit Diagram", use_column_width=True)
+    
+    # Truth Table for a 1-bit adder
+    st.write("### Truth Table (1-bit Adder)")
+    truth_table_data = []
+    for a in [0, 1]:
+        for b in [0, 1]:
+            sum_bit = XOR_gate(a, b)
+            carry = AND_gate(a, b)
+            truth_table_data.append([a, b, sum_bit, carry])
+    
+    truth_df = pd.DataFrame(truth_table_data, columns=["A", "B", "Sum", "Carry"])
+    st.table(truth_df)
+    
+    # Interactive Simulation
+    if mode == "🟢 Simulation Mode":
+        st.write("### Interactive Simulation")
+        sim_col1, sim_col2 = st.columns([1, 2])
+        
+        with sim_col1:
+            a = st.toggle("Input A", value=False)
+            b = st.toggle("Input B", value=False)
+            
+            sum_bit = XOR_gate(int(a), int(b))
+            carry = AND_gate(int(a), int(b))
+            
+            st.metric("Sum", sum_bit)
+            st.metric("Carry", carry)
+            
+            inputs = {"Input A": int(a), "Input B": int(b)}
+            outputs = {"Sum": sum_bit, "Carry": carry}
+            log_data(inputs, outputs, "Binary Addition")
+            
+        with sim_col2:
+            # Display the implementation diagram image
+            st.write("#### Binary Addition Implementation")
+            st.image("binary_adder.jpg", caption="Binary Addition Implementation", use_column_width=True)
+
+def address_decoder_simulator():
+    st.write("### Address Decoder Circuit")
+    st.info("An address decoder decodes a binary address and selects one of many output lines.")
+    
+    # Display the circuit diagram image
+    st.write("#### Circuit Diagram")
+    st.image("Address-decoder-curcuit.png", caption="Address Decoder Circuit Diagram", use_column_width=True)
+    
+    # Truth Table for a 2-to-4 decoder
+    st.write("### Truth Table (2-to-4 Decoder)")
+    truth_table_data = []
+    for a in [0, 1]:
+        for b in [0, 1]:
+            output0 = 1 if (a == 0 and b == 0) else 0
+            output1 = 1 if (a == 0 and b == 1) else 0
+            output2 = 1 if (a == 1 and b == 0) else 0
+            output3 = 1 if (a == 1 and b == 1) else 0
+            truth_table_data.append([a, b, output0, output1, output2, output3])
+    
+    truth_df = pd.DataFrame(truth_table_data, columns=["A", "B", "Output 0", "Output 1", "Output 2", "Output 3"])
+    st.table(truth_df)
+    
+    # Interactive Simulation
+    if mode == "🟢 Simulation Mode":
+        st.write("### Interactive Simulation")
+        sim_col1, sim_col2 = st.columns([1, 2])
+        
+        with sim_col1:
+            a = st.toggle("Input A", value=False)
+            b = st.toggle("Input B", value=False)
+            
+            output0 = 1 if (not a and not b) else 0
+            output1 = 1 if (not a and b) else 0
+            output2 = 1 if (a and not b) else 0
+            output3 = 1 if (a and b) else 0
+            
+            st.metric("Output 0", output0)
+            st.metric("Output 1", output1)
+            st.metric("Output 2", output2)
+            st.metric("Output 3", output3)
+            
+            inputs = {"Input A": int(a), "Input B": int(b)}
+            outputs = {"Output 0": output0, "Output 1": output1, "Output 2": output2, "Output 3": output3}
+            log_data(inputs, outputs, "Address Decoder")
+            
+        with sim_col2:
+            # Display the implementation diagram image
+            st.write("#### Address Decoder Implementation")
+            st.image("Address-decoder-curcuit.png", caption="Address Decoder Implementation", use_column_width=True)
+                                
 # Run the selected experiment
 if selected_experiment == "Half Adder":
     half_adder_simulator()
@@ -491,6 +744,18 @@ elif selected_experiment == "Half Subtractor":
     half_subtractor_simulator()
 elif selected_experiment == "Full Subtractor":
     full_subtractor_simulator()
+elif selected_experiment == "Multiplexer (MUX)":
+    multiplexer_simulator()
+elif selected_experiment == "Demultiplexer (DEMUX)":
+    demultiplexer_simulator()
+elif selected_experiment == "Magnitude Comparator":
+    magnitude_comparator_simulator()
+elif selected_experiment == "Binary Addition":
+    binary_addition_simulator()
+elif selected_experiment == "Address Decoder":
+    address_decoder_simulator()
+else:
+    st.warning("Please select an experiment from the sidebar.")
 
 # Sequential Circuit Functions
 def sr_latch_nand_simulator():
@@ -685,13 +950,141 @@ def d_flip_flop_simulator():
             """)
             st.write("A D flip-flop can be constructed from an SR latch with D connected to S and D̅ to R")
 
-# Run the selected experiment
-if selected_experiment == "SR Latch using NAND Gates":
+def master_slave_jk_flip_flop_simulator():
+    st.write("### Master-Slave JK Flip-Flop")
+    st.info("The Master-Slave JK Flip-Flop is a sequential circuit that avoids race conditions by using two stages: Master and Slave.")
+    
+    # State tracking
+    if "q_state" not in st.session_state:
+        st.session_state.q_state = 0
+        st.session_state.q_not_state = 1
+    
+    # Truth Table
+    st.write("### Truth Table")
+    truth_df = pd.DataFrame([
+        ["0", "0", "No change", "No change", "Memory state"],
+        ["0", "1", "0", "1", "Reset"],
+        ["1", "0", "1", "0", "Set"],
+        ["1", "1", "Toggle", "Toggle", "Toggle"]
+    ], columns=["J", "K", "Q", "Q̅", "Operation"])
+    st.table(truth_df)
+    
+    # Interactive Simulation
+    if mode == "🟢 Simulation Mode":
+        st.write("### Interactive Simulation")
+        sim_col1, sim_col2 = st.columns([1, 2])
+        
+        with sim_col1:
+            j_input = st.toggle("J (Set)", value=False)
+            k_input = st.toggle("K (Reset)", value=False)
+            clock_input = st.toggle("Clock", value=False)
+            
+            # Logic for Master-Slave JK Flip-Flop
+            if clock_input:  # On rising edge of the clock
+                if j_input and not k_input:  # Set
+                    st.session_state.q_state = 1
+                    st.session_state.q_not_state = 0
+                elif not j_input and k_input:  # Reset
+                    st.session_state.q_state = 0
+                    st.session_state.q_not_state = 1
+                elif j_input and k_input:  # Toggle
+                    st.session_state.q_state = 1 - st.session_state.q_state
+                    st.session_state.q_not_state = 1 - st.session_state.q_not_state
+                # If both 0, no change (keep previous state)
+            
+            st.metric("Q", st.session_state.q_state)
+            st.metric("Q̅", st.session_state.q_not_state)
+            
+            inputs = {"J": int(j_input), "K": int(k_input), "Clock": int(clock_input)}
+            outputs = {"Q": st.session_state.q_state, "Q̅": st.session_state.q_not_state}
+            log_data(inputs, outputs, "Master-Slave JK Flip-Flop")
+            
+        with sim_col2:
+            # Create a simple diagram
+            st.write("#### Master-Slave JK Flip-Flop Implementation")
+            st.markdown("""
+            ```
+            J --->|Master|--->|Slave|---> Q
+            K --->|      |   |     |
+            Clock --->|      |   |     |---> Q̅
+            ```
+            """)
+            st.write("Note: The Master-Slave JK Flip-Flop avoids race conditions by using two stages.")
+            
+def shift_register_simulator():
+    st.write("### Shift Register")
+    st.info("A shift register is a sequential circuit that shifts data in or out one bit at a time.")
+    
+    # State tracking
+    if "shift_register_state" not in st.session_state:
+        st.session_state.shift_register_state = [0, 0, 0, 0]  # 4-bit shift register
+    
+    # Truth Table
+    st.write("### Truth Table (4-bit Shift Register)")
+    truth_df = pd.DataFrame([
+        ["0", "0", "No change", "No change", "No shift"],
+        ["1", "0", "Shift right", "Shift right", "Shift data right"],
+        ["0", "1", "Shift left", "Shift left", "Shift data left"],
+        ["1", "1", "Invalid", "Invalid", "Invalid operation"]
+    ], columns=["Shift Right", "Shift Left", "Operation", "Output", "Description"])
+    st.table(truth_df)
+    
+    # Interactive Simulation
+    if mode == "🟢 Simulation Mode":
+        st.write("### Interactive Simulation")
+        sim_col1, sim_col2 = st.columns([1, 2])
+        
+        with sim_col1:
+            shift_right = st.toggle("Shift Right", value=False)
+            shift_left = st.toggle("Shift Left", value=False)
+            data_input = st.toggle("Data Input", value=False)
+            
+            # Logic for Shift Register
+            if shift_right and not shift_left:  # Shift right
+                st.session_state.shift_register_state = [data_input] + st.session_state.shift_register_state[:-1]
+            elif not shift_right and shift_left:  # Shift left
+                st.session_state.shift_register_state = st.session_state.shift_register_state[1:] + [data_input]
+            elif shift_right and shift_left:  # Invalid
+                st.warning("⚠️ Invalid operation (Shift Right and Shift Left cannot be active simultaneously)")
+            
+            st.write("### Shift Register State")
+            st.write(f"Bit 3: {st.session_state.shift_register_state[0]}")
+            st.write(f"Bit 2: {st.session_state.shift_register_state[1]}")
+            st.write(f"Bit 1: {st.session_state.shift_register_state[2]}")
+            st.write(f"Bit 0: {st.session_state.shift_register_state[3]}")
+            
+            inputs = {"Shift Right": int(shift_right), "Shift Left": int(shift_left), "Data Input": int(data_input)}
+            outputs = {"Bit 3": st.session_state.shift_register_state[0],
+                       "Bit 2": st.session_state.shift_register_state[1],
+                       "Bit 1": st.session_state.shift_register_state[2],
+                       "Bit 0": st.session_state.shift_register_state[3]}
+            log_data(inputs, outputs, "Shift Register")
+            
+        with sim_col2:
+            # Create a simple diagram
+            st.write("#### Shift Register Implementation")
+            st.markdown("""
+            ```
+            Data Input --->|Bit 3|--->|Bit 2|--->|Bit 1|--->|Bit 0|
+            Shift Right --->|      |   |     |   |     |   |     |
+            Shift Left --->|      |   |     |   |     |   |     |
+            ```
+            """)
+            st.write("Note: The shift register can shift data left or right based on control signals.")
+            
+            
+if selected_experiment == "SR Latch (NAND)":
     sr_latch_nand_simulator()
-elif selected_experiment == "SR Latch using NOR Gates":
+elif selected_experiment == "SR Latch (NOR)":
     sr_latch_nor_simulator()
 elif selected_experiment == "D Flip-Flop":
     d_flip_flop_simulator()
+elif selected_experiment == "Master-Slave JK Flip-Flop":
+    master_slave_jk_flip_flop_simulator()
+elif selected_experiment == "Shift Register":
+    shift_register_simulator()
+else:
+    st.warning("Please select an experiment from the sidebar.")
     
 # Timer and Multivibrator Functions
 def astable_multivibrator_555():
