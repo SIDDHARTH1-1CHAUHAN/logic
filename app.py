@@ -15,7 +15,8 @@ gate_images = {
     "NOT": "not.png"
 }
 
-# Logic Gate Functions
+#testing...
+
 def AND(a, b): return int(a and b)
 def OR(a, b): return int(a or b)
 def XOR(a, b): return int(a ^ b)
