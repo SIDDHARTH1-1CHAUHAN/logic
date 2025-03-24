@@ -9,6 +9,7 @@ import time
 import os
 import networkx as nx
 import random
+import json
 
 # Set page configuration
 st.set_page_config(
@@ -29,25 +30,58 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Function to detect available COM ports
+def get_available_com_ports():
+    """
+    Scans and returns available COM ports
+    Author: SIDDHARTH CHAUHAN
+    """
+    import serial.tools.list_ports
+    return [port.device for port in serial.tools.list_ports.comports()]
+
 # 🔌 Available COM ports (for hardware mode)
-available_ports = ['COM3', 'COM4', 'COM5', 'COM6']
+available_ports = get_available_com_ports()
+if not available_ports:
+    available_ports = ['COM3', 'COM4', 'COM5', 'COM6']  # Default fallback
+
 selected_port = st.sidebar.selectbox("Select COM Port:", available_ports)
 
 # 📡 Serial Communication Setup (for hardware mode)
 ser = None
-try:
-    ser = serial.Serial(selected_port, 9600, timeout=1)
-    time.sleep(2)
-    st.sidebar.success(f"Connected to {selected_port}")
-except Exception as e:
-    st.sidebar.error(f"Error connecting to Arduino: {e}")
+hardware_connected = False
+
+def initialize_serial_connection():
+    """
+    Initializes the serial connection to Arduino
+    Author: SIDDHARTH CHAUHAN
+    """
+    global ser, hardware_connected
+    try:
+        ser = serial.Serial(selected_port, 9600, timeout=1)
+        time.sleep(2)  # Wait for Arduino to reset
+        st.sidebar.success(f"Connected to {selected_port}")
+        hardware_connected = True
+        return ser
+    except Exception as e:
+        st.sidebar.error(f"Error connecting to Arduino: {e}")
+        hardware_connected = False
+        return None
+
+# Initialize serial connection
+if st.sidebar.button("Connect to Hardware"):
+    ser = initialize_serial_connection()
 
 # Session State Initialization
 if "history_data" not in st.session_state:
     st.session_state.history_data = []
 
+# Replace original waveform_data structure
 if "waveform_data" not in st.session_state:
-    st.session_state.waveform_data = {"Time": [], "Input 1": [], "Input 2": [], "Output": []}
+    st.session_state.waveform_data = {
+        "Time": [],
+        "Inputs": {},  # Dynamic input storage
+        "Outputs": {}  # Dynamic output storage
+    }
 
 if "current_experiment" not in st.session_state:
     st.session_state.current_experiment = "Basic Logic Gates"
@@ -75,6 +109,17 @@ gate_descriptions = {
     "NOR": "Outputs **1** only if **both inputs** are 0.",
     "XNOR": "Outputs **1** if the inputs are **the same**.",
     "NOT": "Outputs the **inverse** of the input."
+}
+
+# Gate to Arduino pin mapping
+gate_pin_map = {
+    "AND Gate": {"input_pins": [2, 3], "output_pin": 13},
+    "OR Gate": {"input_pins": [4, 5], "output_pin": 12},
+    "NOT Gate": {"input_pins": [6], "output_pin": 11},
+    "NAND Gate": {"input_pins": [7, 8], "output_pin": 10},
+    "NOR Gate": {"input_pins": [9, 10], "output_pin": 9},
+    "XOR Gate": {"input_pins": [11, 12], "output_pin": 8},
+    "XNOR Gate": {"input_pins": [13, 2], "output_pin": 7}
 }
 
 # Application Title
@@ -123,42 +168,142 @@ st.session_state.current_experiment = selected_experiment
 # Mode Selection
 mode = st.sidebar.radio("Mode Selection", ["🔴 Hardware Mode", "🟢 Simulation Mode", "🎓 Learning Mode"])
 
+# Serial Communication Functions
+def send_arduino_command(gate_type, inputs, pins=None):
+    """
+    Sends command to Arduino for logic gate operations
+    Author: SIDDHARTH CHAUHAN
+    
+    Args:
+        gate_type (str): Type of logic gate (AND, OR, etc.)
+        inputs (list): List of input values (0 or 1)
+        pins (dict, optional): Custom pin mapping. Defaults to None.
+    
+    Returns:
+        dict: Response from Arduino including output value
+    """
+    if not ser:
+        st.error("No Arduino connection. Please connect to hardware first.")
+        return {"error": "No connection"}
+    
+    try:
+        # Prepare command as JSON
+        command = {
+            "operation": "GATE",
+            "gate_type": gate_type,
+            "inputs": inputs
+        }
+        
+        if pins:
+            command["pins"] = pins
+        
+        # Send command to Arduino
+        ser.write((json.dumps(command) + "\n").encode())
+        time.sleep(0.1)  # Small delay for Arduino processing
+        
+        # Read response from Arduino
+        response_raw = ser.readline().decode('utf-8').strip()
+        if not response_raw:
+            return {"error": "No response from Arduino"}
+        
+        try:
+            response = json.loads(response_raw)
+            return response
+        except json.JSONDecodeError:
+            return {"error": f"Invalid response: {response_raw}"}
+            
+    except Exception as e:
+        return {"error": f"Communication error: {str(e)}"}
+
+def test_arduino_connection():
+    """
+    Tests the Arduino connection by sending a ping command
+    Author: SIDDHARTH CHAUHAN
+    
+    Returns:
+        bool: True if connection successful, False otherwise
+    """
+    if not ser:
+        return False
+        
+    try:
+        # Send ping command
+        ser.write('{"operation": "PING"}\n'.encode())
+        time.sleep(0.1)
+        
+        # Read response
+        response = ser.readline().decode('utf-8').strip()
+        return response == '{"status": "OK", "message": "PONG"}'
+    except:
+        return False
+
 # 📈 Data Logging Function
 def log_data(inputs, outputs, experiment_name):
-    """Logs experiment data dynamically."""
+    """
+    Logs experiment data with dynamic inputs/outputs
+    Author: SIDDHARTH CHAUHAN
+    """
     entry = {**inputs, **outputs, "Experiment": experiment_name, "Timestamp": pd.Timestamp.now()}
     st.session_state.history_data.append(entry)
     
-    # Update waveform data
-    if len(inputs) >= 2 and len(outputs) >= 1:
-        st.session_state.waveform_data["Time"].append(len(st.session_state.waveform_data["Time"]))
-        st.session_state.waveform_data["Input 1"].append(list(inputs.values())[0])
-        st.session_state.waveform_data["Input 2"].append(list(inputs.values())[1] if len(inputs) > 1 else 0)
-        st.session_state.waveform_data["Output"].append(list(outputs.values())[0])
+    # Update waveform data with dynamic keys
+    time_step = len(st.session_state.waveform_data["Time"])
+    st.session_state.waveform_data["Time"].append(time_step)
+    
+    for key, val in inputs.items():
+        if key not in st.session_state.waveform_data["Inputs"]:
+            st.session_state.waveform_data["Inputs"][key] = []
+        st.session_state.waveform_data["Inputs"][key].append(val)
+        
+    for key, val in outputs.items():
+        if key not in st.session_state.waveform_data["Outputs"]:
+            st.session_state.waveform_data["Outputs"][key] = []
+        st.session_state.waveform_data["Outputs"][key].append(val)
 
-# 🌊 Interactive Timing Diagram
-def plot_logic_wave():
-    """Generate an interactive timing diagram with Plotly."""
+# 🌊 Input Timing Diagram
+def plot_input_wave():
     fig = go.Figure()
     time_steps = st.session_state.waveform_data["Time"]
+    
+    for input_name, values in st.session_state.waveform_data["Inputs"].items():
+        fig.add_trace(go.Scatter(
+            x=time_steps, 
+            y=values,
+            mode="lines+markers",
+            name=input_name,
+            line=dict(shape="hv", width=2)
+        ))
+    
+    fig.update_layout(
+        title=f"⏳ Input Timing - {selected_experiment}",
+        xaxis_title="Time Steps",
+        yaxis_title="Logic State",
+        height=250,
+        template="plotly_white"
+    )
+    return fig
 
-    if len(time_steps) > 0:
-        fig.add_trace(go.Scatter(x=time_steps, y=st.session_state.waveform_data["Input 1"], 
-                               mode="lines+markers", name="Input 1", line=dict(shape="hv", width=2)))
-        fig.add_trace(go.Scatter(x=time_steps, y=st.session_state.waveform_data["Input 2"], 
-                               mode="lines+markers", name="Input 2", line=dict(shape="hv", width=2)))
-        fig.add_trace(go.Scatter(x=time_steps, y=st.session_state.waveform_data["Output"], 
-                               mode="lines+markers", name="Output", line=dict(shape="hv", width=3, dash="dash")))
-
-        fig.update_layout(
-            title=f"⏳ Timing Diagram - {selected_experiment}",
-            xaxis_title="Time Steps",
-            yaxis_title="Logic State (0/1)",
-            yaxis=dict(tickmode="array", tickvals=[0, 1]),
-            height=300,
-            template="plotly_white"
-        )
-
+# 🌊 Output Timing Diagram
+def plot_output_wave():
+    fig = go.Figure()
+    time_steps = st.session_state.waveform_data["Time"]
+    
+    for output_name, values in st.session_state.waveform_data["Outputs"].items():
+        fig.add_trace(go.Scatter(
+            x=time_steps, 
+            y=values,
+            mode="lines+markers",
+            name=output_name,
+            line=dict(shape="hv", width=3, dash="dash")
+        ))
+    
+    fig.update_layout(
+        title=f"⏳ Output Timing - {selected_experiment}",
+        xaxis_title="Time Steps",
+        yaxis_title="Logic State",
+        height=250,
+        template="plotly_white"
+    )
     return fig
 
 # Logic Gate Simulator Function
@@ -168,7 +313,7 @@ def basic_logic_gate_simulator(gate_name):
     
     # Display gate diagram
     logic_image_path = f"{gate_name.split()[0].lower()}.png"
-    ic_image_path = f"images/{gate_name.split()[0].lower()}_ic.png"
+    ic_image_path = f"ics/{gate_name.split()[0].lower()}_ic.png"
 
     col1, col2 = st.columns(2)
     with col1:
@@ -223,17 +368,79 @@ def basic_logic_gate_simulator(gate_name):
             log_data(inputs, outputs, gate_name)
             
         with sim_col2:
-            st.plotly_chart(plot_logic_wave(), use_container_width=True)
+            st.plotly_chart(plot_input_wave(), use_container_width=True)
+            st.plotly_chart(plot_output_wave(), use_container_width=True)
             
     elif mode == "🔴 Hardware Mode":
         st.write("Connect the appropriate IC and pins as shown in the diagram")
-        start_hardware = st.button("Start Hardware Test")
         
-        if start_hardware and ser:
-            st.write("Reading from hardware...")
-            # Placeholder for hardware communication
-            # In a real implementation, this would send commands to Arduino
-            # and read back the results
+        # Hardware interface for logic gates
+        hw_col1, hw_col2 = st.columns([1, 2])
+        
+        with hw_col1:
+            if not hardware_connected:
+                st.warning("Hardware not connected. Please connect to hardware first.")
+                if st.button("Test Connection"):
+                    if test_arduino_connection():
+                        st.success("Arduino connection successful!")
+                    else:
+                        st.error("Failed to communicate with Arduino.")
+            else:
+                st.success("Hardware connected and ready.")
+                
+                # Input controls
+                if gate_name != "NOT Gate":
+                    hw_in1 = st.toggle("Hardware Input A", value=False)
+                    hw_in2 = st.toggle("Hardware Input B", value=False)
+                    input_values = [int(hw_in1), int(hw_in2)]
+                else:
+                    hw_in1 = st.toggle("Hardware Input A", value=False)
+                    input_values = [int(hw_in1)]
+                
+                # Run hardware test button
+                if st.button("Run Hardware Test"):
+                    # Get gate type from gate name
+                    gate_type = gate_name.split()[0]  # e.g., "AND" from "AND Gate"
+                    
+                    # Send command to Arduino
+                    response = send_arduino_command(gate_type, input_values)
+                    
+                    if "error" in response:
+                        st.error(f"Hardware Error: {response['error']}")
+                    else:
+                        hw_result = response.get("output", "Error")
+                        st.metric("Hardware Output", hw_result)
+                        
+                        # Log hardware data
+                        if gate_name != "NOT Gate":
+                            hw_inputs = {"Input A": input_values[0], "Input B": input_values[1]}
+                        else:
+                            hw_inputs = {"Input A": input_values[0]}
+                            
+                        hw_outputs = {"Output": hw_result}
+                        log_data(hw_inputs, hw_outputs, f"HW_{gate_name}")
+                        
+                        # Show hardware info
+                        st.info(f"Using {response.get('ic', 'Unknown IC')} on pins {response.get('pins', 'Unknown')}")
+        
+        with hw_col2:
+            st.plotly_chart(plot_input_wave(), use_container_width=True)
+            st.plotly_chart(plot_output_wave(), use_container_width=True)
+            
+            # Hardware connection diagram
+            st.subheader("Hardware Connection")
+            if gate_name in gate_pin_map:
+                pins = gate_pin_map[gate_name]
+                st.markdown(f"""
+                **Pin Configuration:**
+                - Input A: Arduino pin {pins['input_pins'][0]}
+                - {'Input B: Arduino pin ' + str(pins['input_pins'][1]) if len(pins['input_pins']) > 1 else ''}
+                - Output: Arduino pin {pins['output_pin']}
+                
+                Connect the appropriate IC according to the diagram above.
+                """)
+            else:
+                st.warning("Pin configuration not found for this gate.")
             
     elif mode == "🎓 Learning Mode":
         st.write("### How This Gate Works")
@@ -241,22 +448,81 @@ def basic_logic_gate_simulator(gate_name):
         if gate_name == "AND Gate":
             st.markdown("""
             The AND gate is a basic digital logic gate that implements logical conjunction.
-            - Output is HIGH (1) only when all inputs are HIGH (1)
-            - It's like a series connection of switches - all must be ON for the circuit to work
-            - Used in systems that require all conditions to be met
+            - Output is HIGH (1) only when all inputs are HIGH (1).
+            - It's like a series connection of switches - all must be ON for the circuit to work.
+            - Used in systems that require all conditions to be met.
             """)
+
         elif gate_name == "OR Gate":
             st.markdown("""
             The OR gate implements logical disjunction.
-            - Output is HIGH (1) when at least one input is HIGH (1)
-            - It's like a parallel connection of switches - if any is ON, the circuit works
-            - Used when you need to detect if any condition is true
+            - Output is HIGH (1) when at least one input is HIGH (1).
+            - It's like a parallel connection of switches - if any is ON, the circuit works.
+            - Used when you need to detect if any condition is true.
             """)
-        # Add similar explanations for other gates
 
+        elif gate_name == "NOT Gate":
+            st.markdown("""
+            The NOT gate (also called an inverter) implements logical negation.
+            - Output is the inverse of the input.
+            - If input is HIGH (1), output is LOW (0), and vice-versa.
+            - Used to invert or complement a signal.
+            """)
+
+        elif gate_name == "NAND Gate":
+            st.markdown("""
+            The NAND gate is a combination of an AND gate followed by a NOT gate.
+            - Output is LOW (0) only when all inputs are HIGH (1).
+            - Output is HIGH (1) in all other cases.
+            - It's a universal gate - any other logic gate can be constructed from NAND gates.
+            """)
+
+        elif gate_name == "NOR Gate":
+            st.markdown("""
+            The NOR gate is a combination of an OR gate followed by a NOT gate.
+            - Output is HIGH (1) only when all inputs are LOW (0).
+            - Output is LOW (0) in all other cases.
+            - It's also a universal gate.
+            """)
+
+        elif gate_name == "XOR Gate":
+            st.markdown("""
+            The XOR (exclusive OR) gate implements logical exclusive disjunction.
+            - Output is HIGH (1) when the inputs are different (one is HIGH, the other is LOW).
+            - Output is LOW (0) when the inputs are the same (both HIGH or both LOW).
+            - Used in applications like adders and comparators.
+            """)
+
+        elif gate_name == "XNOR Gate":
+            st.markdown("""
+            The XNOR (exclusive NOR) gate implements logical exclusive NOR.
+            - Output is HIGH (1) when the inputs are the same (both HIGH or both LOW).
+            - Output is LOW (0) when the inputs are different (one is HIGH, the other is LOW).
+            - It's the inverse of the XOR gate.
+            """)
+
+        else:
+            st.markdown("Select a valid logic gate.")
+
+# Placeholder function for other experiment categories
+def other_experiment_placeholder(experiment_name):
+    st.subheader(experiment_name)
+    st.info("This experiment is available in simulation mode only. Hardware mode is under development.")
+    
+    if mode == "🔴 Hardware Mode":
+        st.warning("Hardware mode for this experiment is not yet implemented. Please use simulation mode.")
+    
 # Run the selected experiment
 if selected_experiment in all_experiments["Basic Logic Gates"]:
     basic_logic_gate_simulator(selected_experiment)
+else:
+    other_experiment_placeholder(selected_experiment)
+
+# Add footer
+st.markdown("---")
+st.markdown("### Digital Logic Lab Simulator - Developed by Siddharth Chauhan and Ishnoor Singh")
+st.markdown("For educational purposes only. © 2025")
+
 
 # Combinational Circuit Functions
 import streamlit as st
@@ -309,9 +575,9 @@ def half_adder_simulator():
             log_data(inputs, outputs, "Half Adder")
             
         with sim_col2:
-            # Display the implementation diagram image
-            st.write("#### Half Adder Implementation")
             st.image("half_adder_diagram.png", caption="Half Adder Implementation", use_column_width=True)
+            st.plotly_chart(plot_input_wave(), use_container_width=True)
+            st.plotly_chart(plot_output_wave(), use_container_width=True)
 
 
 import streamlit as st
@@ -384,9 +650,9 @@ def full_adder_simulator():
             log_data(inputs, outputs, "Full Adder")
             
         with sim_col2:
-            # Display the implementation diagram image
-            st.write("#### Full Adder Implementation")
-            st.image("full_adder_circuit.jpg", caption="Full Adder Implementation", use_column_width=True)  # Adjust width as needed
+            st.image("full_adder_circuit.jpg", caption="Full Adder Implementation", use_column_width=True)
+            st.plotly_chart(plot_input_wave(), use_container_width=True)
+            st.plotly_chart(plot_output_wave(), use_container_width=True)
 
 import streamlit as st
 import pandas as pd
@@ -441,9 +707,9 @@ def half_subtractor_simulator():
             log_data(inputs, outputs, "Half Subtractor")
             
         with sim_col2:
-            # Display the implementation diagram image
-            st.write("#### Half Subtractor Implementation")
             st.image("half_subtractor_diagram.png", caption="Half Subtractor Implementation", use_column_width=True)
+            st.plotly_chart(plot_input_wave(), use_container_width=True)
+            st.plotly_chart(plot_output_wave(), use_container_width=True)
 
 
 
@@ -505,9 +771,9 @@ def full_subtractor_simulator():
             log_data(inputs, outputs, "Full Subtractor")
             
         with sim_col2:
-            # Display the implementation diagram image
-            st.write("#### Full Subtractor Implementation")
             st.image("full_subtractor_diagram.png", caption="Full Subtractor Implementation", use_column_width=True)
+            st.plotly_chart(plot_input_wave(), use_container_width=True)
+            st.plotly_chart(plot_output_wave(), use_container_width=True)
 
 def multiplexer_simulator():
     st.write("### Multiplexer (MUX) Circuit")
@@ -548,9 +814,9 @@ def multiplexer_simulator():
             log_data(inputs, outputs, "Multiplexer")
             
         with sim_col2:
-            # Display the implementation diagram image
-            st.write("#### Multiplexer Implementation")
             st.image("multiplexer_curcuit.jpg", caption="Multiplexer Implementation", use_column_width=True)
+            st.plotly_chart(plot_input_wave(), use_container_width=True)
+            st.plotly_chart(plot_output_wave(), use_container_width=True)
 
 def demultiplexer_simulator():
     st.write("### Demultiplexer (DEMUX) Circuit")
@@ -592,9 +858,9 @@ def demultiplexer_simulator():
             log_data(inputs, outputs, "Demultiplexer")
             
         with sim_col2:
-            # Display the implementation diagram image
-            st.write("#### Demultiplexer Implementation")
             st.image("demultiplexer_curcuit.jpg", caption="Demultiplexer Implementation", use_column_width=True)
+            st.plotly_chart(plot_input_wave(), use_container_width=True)
+            st.plotly_chart(plot_output_wave(), use_container_width=True)
             
 def magnitude_comparator_simulator():
     st.write("### Magnitude Comparator Circuit")
@@ -804,9 +1070,8 @@ def sr_latch_nand_simulator():
             st.metric("Q", st.session_state.q_state)
             st.metric("Q̅", st.session_state.q_not_state)
             
-            inputs = {"S̅": int(not set_input), "R̅": int(not reset_input)}  # Inverted for NAND
+            inputs = {"S̅": int(not set_input), "R̅": int(not reset_input)}
             outputs = {"Q": st.session_state.q_state, "Q̅": st.session_state.q_not_state}
-            log_data(inputs, outputs, "SR Latch (NAND)")
             
         with sim_col2:
             # Create a simple diagram
@@ -823,6 +1088,8 @@ def sr_latch_nand_simulator():
             ```
             """)
             st.write("Note: NAND-based SR Latch uses active-low inputs")
+            st.plotly_chart(plot_input_wave(), use_container_width=True)
+            st.plotly_chart(plot_output_wave(), use_container_width=True)
 
 def sr_latch_nor_simulator():
     st.write("### SR Latch using NOR Gates")
@@ -931,7 +1198,7 @@ def d_flip_flop_simulator():
             st.metric("Q", st.session_state.d_ff_q)
             st.metric("Q̅", st.session_state.d_ff_q_not)
             
-            inputs = {"D": int(d_input), "Clock": int(clock)}
+            inputs = {"CLK": int(clock), "D": int(d_input)}
             outputs = {"Q": st.session_state.d_ff_q, "Q̅": st.session_state.d_ff_q_not}
             log_data(inputs, outputs, "D Flip-Flop")
             
@@ -951,6 +1218,9 @@ def d_flip_flop_simulator():
             ```
             """)
             st.write("A D flip-flop can be constructed from an SR latch with D connected to S and D̅ to R")
+            with sim_col2:
+                            st.plotly_chart(plot_input_wave(), use_container_width=True)
+                            st.plotly_chart(plot_output_wave(), use_container_width=True)
 
 def master_slave_jk_flip_flop_simulator():
     st.write("### Master-Slave JK Flip-Flop")

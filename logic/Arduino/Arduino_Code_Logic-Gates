@@ -1,0 +1,195 @@
+// Digital Logic Lab Gate Simulator
+// Author: SIDDHARTH CHAUHAN
+
+// This code implements hardware functionality for the Digital Logic Lab Simulator
+// to demonstrate basic logic gates operation through serial communication with Python.
+
+// Compatible with the Streamlit interface for hardware mode interaction 
+
+// Pin definitions for inputs and outputs
+#define INPUT_A_PIN 2
+#define INPUT_B_PIN 3
+#define OUTPUT_PIN 13
+
+// Commands from Python
+#define CMD_SET_GATE 'G'   // Set the current gate type
+#define CMD_SET_INPUT 'I'  // Set input values
+#define CMD_READ_OUTPUT 'R' // Read the current output
+#define CMD_TEST_CONNECTION 'T' // Test the connection
+
+// Gate type definitions
+#define GATE_AND 1
+#define GATE_OR 2
+#define GATE_NOT 3
+#define GATE_NAND 4
+#define GATE_NOR 5
+#define GATE_XOR 6
+#define GATE_XNOR 7
+
+byte currentGate = GATE_AND; // Default gate
+bool inputA = false;
+bool inputB = false;
+bool output = false;
+
+// Setup function
+void setup() {
+  // Initialize serial communication
+  Serial.begin(9600);
+  
+  // Configure pins
+  pinMode(INPUT_A_PIN, INPUT_PULLUP);
+  pinMode(INPUT_B_PIN, INPUT_PULLUP);
+  pinMode(OUTPUT_PIN, OUTPUT);
+  
+  // Initial message to indicate readiness
+  delay(1000); // Give time for serial to initialize
+  Serial.println(F("Digital Logic Lab Simulator - Developed by SIDDHARTH CHAUHAN"));
+  Serial.println(F("System ready for logic gate operations"));
+}
+
+// Main loop
+void loop() {
+  // Check for serial commands
+  if (Serial.available() > 0) {
+    char command = Serial.read();
+    processCommand(command);
+  }
+  
+  // Optional: Read physical button inputs if connected
+  // This allows manual hardware input without software commands
+  // Uncomment if you have physical buttons connected to the Arduino
+  /*
+  if (digitalRead(INPUT_A_PIN) == LOW) {
+    inputA = !inputA;
+    delay(300); // Debounce
+  }
+  if (digitalRead(INPUT_B_PIN) == LOW) {
+    inputB = !inputB;
+    delay(300); // Debounce
+  }
+  */
+  
+  // Process the logic and update output
+  updateOutput();
+  digitalWrite(OUTPUT_PIN, output);
+  
+  // Small delay to prevent excessive processing
+  delay(10);
+}
+
+// Process incoming serial commands
+void processCommand(char command) {
+  switch (command) {
+    case CMD_SET_GATE:
+      if (Serial.available() > 0) {
+        currentGate = Serial.read() - '0'; // Convert ASCII to numeric
+        Serial.print(F("Gate set to: "));
+        printGateName();
+        Serial.println();
+      }
+      break;
+      
+    case CMD_SET_INPUT:
+      if (Serial.available() >= 2) {
+        inputA = Serial.read() == '1';
+        inputB = Serial.read() == '1';
+        Serial.print(F("Inputs set: A="));
+        Serial.print(inputA);
+        Serial.print(F(", B="));
+        Serial.println(inputB);
+        // Update output after input change
+        updateOutput();
+        sendOutput();
+      }
+      break;
+      
+    case CMD_READ_OUTPUT:
+      sendOutput();
+      break;
+      
+    case CMD_TEST_CONNECTION:
+      Serial.println(F("Connection OK - SIDDHARTH CHAUHAN's Digital Logic Lab"));
+      break;
+      
+    default:
+      // Unknown command
+      Serial.println(F("Unknown command"));
+      break;
+  }
+}
+
+// Update the output based on current gate and inputs
+void updateOutput() {
+  // Logic implemented by SIDDHARTH CHAUHAN
+  switch (currentGate) {
+    case GATE_AND:
+      output = inputA && inputB;
+      break;
+      
+    case GATE_OR:
+      output = inputA || inputB;
+      break;
+      
+    case GATE_NOT:
+      output = !inputA; // NOT gate uses only input A
+      break;
+      
+    case GATE_NAND:
+      output = !(inputA && inputB);
+      break;
+      
+    case GATE_NOR:
+      output = !(inputA || inputB);
+      break;
+      
+    case GATE_XOR:
+      output = inputA != inputB;
+      break;
+      
+    case GATE_XNOR:
+      output = inputA == inputB;
+      break;
+      
+    default:
+      // Default to AND gate if invalid
+      output = inputA && inputB;
+      break;
+  }
+}
+
+// Send current output to serial
+void sendOutput() {
+  Serial.print(F("Output="));
+  Serial.println(output);
+}
+
+// Print current gate name
+void printGateName() {
+  // Note: Code authored by SIDDHARTH CHAUHAN
+  switch (currentGate) {
+    case GATE_AND:
+      Serial.print(F("AND"));
+      break;
+    case GATE_OR:
+      Serial.print(F("OR"));
+      break;
+    case GATE_NOT:
+      Serial.print(F("NOT"));
+      break;
+    case GATE_NAND:
+      Serial.print(F("NAND"));
+      break;
+    case GATE_NOR:
+      Serial.print(F("NOR"));
+      break;
+    case GATE_XOR:
+      Serial.print(F("XOR"));
+      break;
+    case GATE_XNOR:
+      Serial.print(F("XNOR"));
+      break;
+    default:
+      Serial.print(F("Unknown"));
+      break;
+  }
+}
